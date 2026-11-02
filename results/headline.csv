@@ -1,0 +1,107 @@
+variant,system,config,n,cutoff_rate,latency_p50_ms,latency_p95_ms,late_or_miss_rate,miss_rate
+synth_test_16k,silence_silero,300 ms,480,0.7270833333333333,378.0000000000001,416.00000000000034,0.0,0.0
+synth_test_16k,silence_silero,500 ms,480,0.59375,572.0000000000001,613.9999999999999,0.0,0.0
+synth_test_16k,silence_silero,800 ms,480,0.46458333333333335,856.0000000000008,902.0000000000001,0.0,0.0
+synth_test_16k,silence_silero,1200 ms,480,0.30833333333333335,1274.0,1314.0,0.0,0.0
+synth_test_16k,silence_webrtc,300 ms,480,0.75625,369.99999999999966,399.9999999999999,0.0,0.0
+synth_test_16k,silence_webrtc,500 ms,480,0.6083333333333333,570.0000000000002,609.9999999999999,0.0,0.0
+synth_test_16k,silence_webrtc,800 ms,480,0.48333333333333334,870.0000000000001,910.0000000000001,0.0,0.0
+synth_test_16k,silence_webrtc,1200 ms,480,0.3458333333333333,1260.0000000000002,1299.9999999999998,0.0,0.0
+synth_test_16k,smart_turn_v3,"p>0.5, fallback 3000 ms (defaults)",480,0.7083333333333334,293.9999999999996,3099.9999999999995,0.07083333333333333,0.0
+synth_test_16k,hazard_fusion_asr,"theta=0.7, cap 3000 ms [matched to Silero 500 ms on train]",480,0.06458333333333334,254.00000000000045,1636.0000000000002,0.03333333333333333,0.0
+synth_test_16k,hazard_fusion_oracle,"theta=0.95, cap 3000 ms [matched to Silero 500 ms on train]",480,0.014583333333333334,258.0,1628.000000000001,0.027083333333333334,0.0
+synth_test_16k,hazard_prosody,"theta=0.4, cap 3000 ms [matched to Silero 500 ms on train]",480,0.11875,251.99999999999977,1480.0,0.022916666666666665,0.0
+synth_test_16k,hazard_text_asr,"theta=0.45, cap 3000 ms [matched to Silero 500 ms on train]",480,0.22916666666666666,258.0,1847.9999999999998,0.03333333333333333,0.0
+synth_test_16k,hazard_text_oracle,"theta=0.9, cap 3000 ms [matched to Silero 500 ms on train]",480,0.04791666666666667,258.0,1184.0000000000002,0.014583333333333334,0.0
+synth_test_16k,hazard_duration_only,"theta=0.6, cap 600 ms [matched to Silero 500 ms on train]",480,0.6229166666666667,540.0,577.9999999999994,0.0,0.0
+synth_test_16k,smart_turn_v3,"p>0.95, cap 800 ms [matched to Silero 800 ms on train]",480,0.6979166666666666,814.0,895.9999999999999,0.0,0.0
+synth_test_16k,hazard_fusion_asr,"theta=0.8, cap 3000 ms [matched to Silero 800 ms on train]",480,0.05,256.0000000000002,1988.0000000000005,0.04583333333333333,0.0
+synth_test_16k,hazard_fusion_oracle,"theta=0.97, cap 3000 ms [matched to Silero 800 ms on train]",480,0.004166666666666667,259.9999999999998,2014.0000000000002,0.05,0.0
+synth_test_16k,hazard_prosody,"theta=0.5, cap 3000 ms [matched to Silero 800 ms on train]",480,0.1,254.00000000000045,1641.9999999999995,0.0375,0.0
+synth_test_16k,hazard_text_asr,"theta=0.55, cap 3000 ms [matched to Silero 800 ms on train]",480,0.18125,260.0000000000002,2052.0000000000005,0.05,0.0
+synth_test_16k,hazard_text_oracle,"theta=0.95, cap 3000 ms [matched to Silero 800 ms on train]",480,0.03125,269.99999999999955,1477.9999999999998,0.014583333333333334,0.0
+synth_test_16k,hazard_duration_only,"theta=0.65, cap 800 ms [matched to Silero 800 ms on train]",480,0.5479166666666667,796.0000000000002,839.9999999999999,0.0,0.0
+synth_test_16k,smart_turn_v3,"p>0.95, cap 1200 ms [matched to Silero 1200 ms on train]",480,0.6395833333333333,1253.9999999999995,1314.0,0.0,0.0
+synth_test_16k,hazard_fusion_asr,"theta=0.85, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.03333333333333333,258.0,2046.0000000000002,0.05416666666666667,0.0
+synth_test_16k,hazard_fusion_oracle,"theta=0.98, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.0,264.0000000000002,2118.0000000000005,0.07083333333333333,0.0
+synth_test_16k,hazard_prosody,"theta=0.6, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.06666666666666667,254.00000000000045,1793.9999999999995,0.0375,0.0
+synth_test_16k,hazard_text_asr,"theta=0.6, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.16458333333333333,260.0000000000007,2052.0000000000005,0.05416666666666667,0.0
+synth_test_16k,hazard_text_oracle,"theta=0.98, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.027083333333333334,524.0,1990.0000000000002,0.04375,0.0
+synth_test_16k,hazard_duration_only,"theta=0.75, cap 1200 ms [matched to Silero 1200 ms on train]",480,0.33958333333333335,1241.9999999999995,1282.0,0.0,0.0
+synth_test_8k,silence_silero,300 ms,480,0.7270833333333333,381.99999999999966,431.99999999999994,0.0,0.0
+synth_test_8k,silence_silero,500 ms,480,0.6104166666666667,570.0000000000002,618.0000000000003,0.0,0.0
+synth_test_8k,silence_silero,800 ms,480,0.48125,855.9999999999999,906.0000000000006,0.0,0.0
+synth_test_8k,silence_silero,1200 ms,480,0.31875,1271.9999999999993,1322.0,0.0,0.0
+synth_test_8k,silence_webrtc,300 ms,480,0.81875,309.9999999999996,389.99999999999966,0.00625,0.00625
+synth_test_8k,silence_webrtc,500 ms,480,0.6583333333333333,519.9999999999995,589.9999999999999,0.00625,0.00625
+synth_test_8k,silence_webrtc,800 ms,480,0.5375,810.0000000000005,889.9999999999997,0.00625,0.00625
+synth_test_8k,silence_webrtc,1200 ms,480,0.4,1200.0000000000002,1280.0000000000002,0.00625,0.00625
+synth_test_8k,smart_turn_v3,"p>0.5, fallback 3000 ms (defaults)",480,0.6604166666666667,320.0000000000003,3114.0,0.13333333333333333,0.0
+synth_test_8k,hazard_fusion_asr,"theta=0.7, cap 3000 ms [matched to Silero 500 ms on train]",480,0.10208333333333333,254.00000000000045,1610.0000000000002,0.01875,0.0
+synth_test_8k,hazard_fusion_oracle,"theta=0.95, cap 3000 ms [matched to Silero 500 ms on train]",480,0.008333333333333333,262.0,1844.0000000000002,0.041666666666666664,0.0
+synth_test_8k,hazard_prosody,"theta=0.4, cap 3000 ms [matched to Silero 500 ms on train]",480,0.23541666666666666,253.99999999999955,1222.0000000000005,0.016666666666666666,0.0
+synth_test_8k,hazard_text_asr,"theta=0.45, cap 3000 ms [matched to Silero 500 ms on train]",480,0.2708333333333333,258.0,2036.0000000000005,0.03958333333333333,0.0
+synth_test_8k,hazard_text_oracle,"theta=0.9, cap 3000 ms [matched to Silero 500 ms on train]",480,0.05,258.0,1184.0000000000002,0.010416666666666666,0.0
+synth_test_8k,hazard_duration_only,"theta=0.6, cap 600 ms [matched to Silero 500 ms on train]",480,0.6333333333333333,540.0,588.0000000000001,0.0,0.0
+synth_test_8k,smart_turn_v3,"p>0.95, cap 800 ms [matched to Silero 800 ms on train]",480,0.6479166666666667,810.0000000000005,905.9999999999997,0.0,0.0
+synth_test_8k,hazard_fusion_asr,"theta=0.8, cap 3000 ms [matched to Silero 800 ms on train]",480,0.07083333333333333,258.0000000000009,1868.0000000000002,0.0375,0.0
+synth_test_8k,hazard_fusion_oracle,"theta=0.97, cap 3000 ms [matched to Silero 800 ms on train]",480,0.0,274.0,2070.0000000000005,0.05625,0.0
+synth_test_8k,hazard_prosody,"theta=0.5, cap 3000 ms [matched to Silero 800 ms on train]",480,0.17708333333333334,256.0000000000002,1585.9999999999998,0.029166666666666667,0.0
+synth_test_8k,hazard_text_asr,"theta=0.55, cap 3000 ms [matched to Silero 800 ms on train]",480,0.21458333333333332,260.0000000000002,2056.0,0.0625,0.0
+synth_test_8k,hazard_text_oracle,"theta=0.95, cap 3000 ms [matched to Silero 800 ms on train]",480,0.035416666666666666,270.00000000000045,1488.0,0.0125,0.0
+synth_test_8k,hazard_duration_only,"theta=0.65, cap 800 ms [matched to Silero 800 ms on train]",480,0.55,796.0000000000002,846.0000000000006,0.0,0.0
+synth_test_8k,smart_turn_v3,"p>0.95, cap 1200 ms [matched to Silero 1200 ms on train]",480,0.5645833333333333,1238.0000000000005,1322.0,0.0,0.0
+synth_test_8k,hazard_fusion_asr,"theta=0.85, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.058333333333333334,262.0,2016.0,0.05,0.0
+synth_test_8k,hazard_fusion_oracle,"theta=0.98, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.0,286.00000000000045,2836.0000000000005,0.08333333333333333,0.0
+synth_test_8k,hazard_prosody,"theta=0.6, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.12083333333333333,258.0,1670.0,0.03125,0.0
+synth_test_8k,hazard_text_asr,"theta=0.6, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.18541666666666667,262.0,2083.9999999999995,0.06666666666666667,0.0
+synth_test_8k,hazard_text_oracle,"theta=0.98, cap 3000 ms [matched to Silero 1200 ms on train]",480,0.027083333333333334,533.9999999999998,1980.0000000000005,0.04791666666666667,0.0
+synth_test_8k,hazard_duration_only,"theta=0.75, cap 1200 ms [matched to Silero 1200 ms on train]",480,0.35208333333333336,1240.0000000000002,1290.0,0.0,0.0
+edacc_test_16k,silence_silero,300 ms,250,0.572,423.9999999999995,1276.0000000000002,0.02,0.016
+edacc_test_16k,silence_silero,500 ms,250,0.48,605.9999999999999,1468.0000000000005,0.02,0.02
+edacc_test_16k,silence_silero,800 ms,250,0.304,871.9999999999999,1520.0000000000005,0.024,0.02
+edacc_test_16k,silence_silero,1200 ms,250,0.192,1279.9999999999993,1719.9999999999998,0.032,0.02
+edacc_test_16k,silence_webrtc,300 ms,250,0.588,379.9999999999999,inf,0.048,0.044
+edacc_test_16k,silence_webrtc,500 ms,250,0.484,589.9999999999999,inf,0.06,0.056
+edacc_test_16k,silence_webrtc,800 ms,250,0.308,890.0000000000006,inf,0.064,0.064
+edacc_test_16k,silence_webrtc,1200 ms,250,0.16,1289.999999999999,inf,0.08,0.068
+edacc_test_16k,smart_turn_v3,"p>0.5, fallback 3000 ms (defaults)",250,0.46,536.0,3289.9999999999995,0.244,0.016
+edacc_test_16k,hazard_fusion_asr,"theta=0.5, cap 2000 ms [matched to Silero 500 ms on train]",250,0.4,459.99999999999994,2268.0000000000005,0.108,0.012
+edacc_test_16k,hazard_fusion_oracle,"theta=0.55, cap 2000 ms [matched to Silero 500 ms on train]",250,0.324,362.0000000000001,2154.0,0.088,0.012
+edacc_test_16k,hazard_prosody,"theta=0.2, cap 2000 ms [matched to Silero 500 ms on train]",250,0.48,315.99999999999983,2168.0,0.064,0.012
+edacc_test_16k,hazard_text_asr,"theta=0.4, cap 2000 ms [matched to Silero 500 ms on train]",250,0.432,476.0000000000004,2148.0000000000005,0.06,0.016
+edacc_test_16k,hazard_text_oracle,"theta=0.55, cap 2000 ms [matched to Silero 500 ms on train]",250,0.392,379.9999999999999,2164.0,0.084,0.016
+edacc_test_16k,hazard_duration_only,"theta=0.6, cap 600 ms [matched to Silero 500 ms on train]",250,0.488,576.0000000000001,1436.0000000000005,0.02,0.016
+edacc_test_16k,smart_turn_v3,"p>0.95, cap 800 ms [matched to Silero 800 ms on train]",250,0.428,817.9999999999997,1367.9999999999998,0.02,0.012
+edacc_test_16k,hazard_fusion_asr,"theta=0.55, cap 2000 ms [matched to Silero 800 ms on train]",250,0.376,568.0000000000005,2268.0000000000005,0.124,0.012
+edacc_test_16k,hazard_fusion_oracle,"theta=0.7, cap 2000 ms [matched to Silero 800 ms on train]",250,0.288,488.0,2164.0,0.096,0.016
+edacc_test_16k,hazard_prosody,"theta=0.65, cap 2000 ms [matched to Silero 800 ms on train]",250,0.368,746.0000000000005,2421.9999999999995,0.144,0.012
+edacc_test_16k,hazard_text_asr,"theta=0.45, cap 2000 ms [matched to Silero 800 ms on train]",250,0.412,504.00000000000045,2148.0000000000005,0.068,0.016
+edacc_test_16k,hazard_text_oracle,"theta=0.8, cap 2000 ms [matched to Silero 800 ms on train]",250,0.308,673.9999999999999,2164.0,0.108,0.02
+edacc_test_16k,hazard_duration_only,"theta=0.65, cap 800 ms [matched to Silero 800 ms on train]",250,0.336,814.0,1303.9999999999998,0.024,0.02
+edacc_test_16k,smart_turn_v3,"p>0.95, cap 1200 ms [matched to Silero 1200 ms on train]",250,0.352,1227.9999999999998,1719.9999999999998,0.024,0.012
+edacc_test_16k,hazard_duration_only,"theta=0.75, cap 1200 ms [matched to Silero 1200 ms on train]",250,0.2,1248.0000000000002,1752.0000000000002,0.032,0.02
+edacc_test_8k,silence_silero,300 ms,250,0.58,394.0000000000001,677.9999999999999,0.016,0.012
+edacc_test_8k,silence_silero,500 ms,250,0.496,580.0000000000001,850.0000000000001,0.016,0.016
+edacc_test_8k,silence_silero,800 ms,250,0.336,858.0000000000001,1084.0,0.016,0.016
+edacc_test_8k,silence_silero,1200 ms,250,0.204,1266.0000000000018,1499.9999999999995,0.024,0.016
+edacc_test_8k,silence_webrtc,300 ms,250,0.652,330.00000000000006,710.0,0.012,0.012
+edacc_test_8k,silence_webrtc,500 ms,250,0.528,540.0,inf,0.032,0.032
+edacc_test_8k,silence_webrtc,800 ms,250,0.364,839.9999999999999,inf,0.036,0.036
+edacc_test_8k,silence_webrtc,1200 ms,250,0.212,1230.0,2669.999999999999,0.04,0.036
+edacc_test_8k,smart_turn_v3,"p>0.5, fallback 3000 ms (defaults)",250,0.484,472.0,3130.0000000000005,0.224,0.012
+edacc_test_8k,hazard_fusion_asr,"theta=0.5, cap 2000 ms [matched to Silero 500 ms on train]",250,0.428,455.99999999999994,2180.0,0.096,0.008
+edacc_test_8k,hazard_fusion_oracle,"theta=0.55, cap 2000 ms [matched to Silero 500 ms on train]",250,0.388,354.0000000000001,2132.0,0.072,0.008
+edacc_test_8k,hazard_prosody,"theta=0.2, cap 2000 ms [matched to Silero 500 ms on train]",250,0.492,287.99999999999983,2082.0,0.04,0.008
+edacc_test_8k,hazard_text_asr,"theta=0.4, cap 2000 ms [matched to Silero 500 ms on train]",250,0.46,476.0,2196.0,0.072,0.016
+edacc_test_8k,hazard_text_oracle,"theta=0.55, cap 2000 ms [matched to Silero 500 ms on train]",250,0.428,347.9999999999999,2154.0,0.072,0.012
+edacc_test_8k,hazard_duration_only,"theta=0.6, cap 600 ms [matched to Silero 500 ms on train]",250,0.512,549.9999999999998,818.0000000000001,0.016,0.016
+edacc_test_8k,smart_turn_v3,"p>0.95, cap 800 ms [matched to Silero 800 ms on train]",250,0.46,823.9999999999999,1047.9999999999995,0.012,0.008
+edacc_test_8k,hazard_fusion_asr,"theta=0.55, cap 2000 ms [matched to Silero 800 ms on train]",250,0.416,554.0000000000002,2180.0,0.104,0.008
+edacc_test_8k,hazard_fusion_oracle,"theta=0.7, cap 2000 ms [matched to Silero 800 ms on train]",250,0.34,451.99999999999994,2188.0000000000005,0.084,0.012
+edacc_test_8k,hazard_prosody,"theta=0.65, cap 2000 ms [matched to Silero 800 ms on train]",250,0.392,734.0,2220.0000000000005,0.14,0.008
+edacc_test_8k,hazard_text_asr,"theta=0.45, cap 2000 ms [matched to Silero 800 ms on train]",250,0.456,609.9999999999999,2228.0,0.08,0.016
+edacc_test_8k,hazard_text_oracle,"theta=0.8, cap 2000 ms [matched to Silero 800 ms on train]",250,0.328,644.0000000000001,2132.0,0.092,0.016
+edacc_test_8k,hazard_duration_only,"theta=0.65, cap 800 ms [matched to Silero 800 ms on train]",250,0.368,794.0000000000005,1045.9999999999998,0.016,0.016
+edacc_test_8k,smart_turn_v3,"p>0.95, cap 1200 ms [matched to Silero 1200 ms on train]",250,0.376,1242.0000000000002,1442.0000000000002,0.016,0.008
+edacc_test_8k,hazard_duration_only,"theta=0.75, cap 1200 ms [matched to Silero 1200 ms on train]",250,0.22,1236.0000000000007,1468.0000000000005,0.024,0.016
