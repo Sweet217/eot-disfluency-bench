@@ -459,6 +459,19 @@ docs/REPRO_PROTOCOL.md   manual protocol for checking a voice assistant
 results/         CSVs, RESULTS.md, plots (generated)
 ```
 
+## Author and how this was built
+
+Gabriel Velázquez Berrueta, software engineer (B.Eng., Universidad de Colima)
+working on LLM and voice systems, with HCI research presented at MexIHC 2026.
+[LinkedIn](https://www.linkedin.com/in/gabriel-velazquez-berrueta-53a3b925a/)
+
+This project was built with Claude Code as a coding agent. I chose the problem,
+set the ground rules (public or synthetic data only, no number in this README
+that did not come from a run, operating points chosen on training data only) and
+the success criterion, and reviewed the results; Claude Code wrote most of the
+implementation and ran the experiments. Commits carry a `Co-Authored-By: Claude`
+trailer.
+
 ## License
 
 Code: MIT, © 2026 Gabriel Velázquez (see `LICENSE`). Data is not redistributed;
