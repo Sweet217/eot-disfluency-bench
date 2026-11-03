@@ -11,13 +11,15 @@ venv: .venv/.installed
 	.venv/bin/pip install -r requirements.txt
 	touch $@
 
-# Synthetic TTS set (macOS `say`) + modest EdAcc subset (one parquet row group per shard)
+# Synthetic TTS set (macOS `say`) + EdAcc (all 16 shards, <= 60 turns per conversation)
 data: venv
 	$(PY) scripts/prepare_data.py
 
-# VADs, Smart Turn, ASR and prosody features, cached per item
+# Real-time pass (streaming ASR schedule, measured compute; test sets single-stream),
+# then the instant-feature ablation pass. Cached in data/cache_v2/.
 extract: venv
-	$(PY) scripts/extract.py
+	$(PY) scripts/extract.py --pass rt
+	$(PY) scripts/extract.py --pass instant
 
 train: extract
 	$(PY) scripts/train.py
@@ -32,4 +34,4 @@ test: venv
 	$(PY) -m pytest
 
 clean:
-	rm -rf data/cache data/models
+	rm -rf data/cache_v2 data/models

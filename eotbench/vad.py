@@ -80,3 +80,14 @@ def silence_runs(speech: np.ndarray, frame_s: float, min_speech_ms: float = 250.
     if s is not None:
         runs.append((s, len(speech) - s))
     return runs
+
+
+def armed_index(speech: np.ndarray, frame_s: float, min_speech_ms: float = 250.0) -> int | None:
+    """First frame at which the endpointer is armed (same rule as `silence_runs`)."""
+    need = int(np.ceil(min_speech_ms / 1000 / frame_s - 1e-9))
+    cur = 0
+    for i, v in enumerate(speech):
+        cur = cur + 1 if v else 0
+        if cur >= need:
+            return i
+    return None

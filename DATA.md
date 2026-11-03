@@ -15,33 +15,41 @@ no customer, broadcast or private recordings, and no paid APIs.
   redistributes none of the audio or transcripts; it downloads them for local
   use. Derived per-item metadata stays in `data/` and is not committed.
   If you redistribute derived audio, the ShareAlike terms apply.
-* **What is downloaded:** row group 2 (100 segments) of each of the 16 parquet
-  shards (10 test + 6 validation), fetched with HTTP range requests:
-  **586 MB** on disk, about 8% of the 6.95 GB release.
-* **Items built:** 500 turn-final segments from 20 dyadic Zoom conversations,
-  39 speakers, 0.9 h of turn speech (1.53 h with the appended room tone).
-  21 distinct values of the corpus `l1` field (e.g. Nigerian English, Sinhalese, Southern British English,
-  Arabic, Italian, Kenyan English, Urdu, Mandarin, Hebrew, Spanish, Vietnamese, Polish,
-  Russian, Romanian, Lithuanian, Hindi).
+* **What is downloaded:** all 16 parquet shards (10 test + 6 validation) of the
+  HF release, **6.95 GB**, into `data/raw/edacc_full/`. That is 19,137 segments from
+  61 dyadic Zoom conversations.
+* **Items built:** 8,640 segments pass the turn-end rules below. To keep compute
+  practical and stop long conversations from dominating, at most **60 turns per
+  conversation** are kept (a seeded random sample within each conversation), giving
+  **3,220 turns from all 61 conversations and 122 speakers**: 6.2 h of turn speech,
+  10.25 h with the appended room tone, 1.4 GB as 16 kHz WAV plus 8 kHz test copies.
+  41 distinct values of the corpus `l1` field (most frequent: Vietnamese, Southern
+  British English, Spanish, Irish English, Mainstream US English, Jamaican English,
+  Italian, Catalan, Nigerian English, Mandarin, Scottish English, Indian English,
+  Bulgarian, Romanian, Polish, Lithuanian, ...).
   Accent groups use the corpus `l1` field: `edacc_L1_english` (an English variety is
-  the L1; 181 items) vs `edacc_L2_english` (319 items).
+  the L1; 1,301 turns) vs `edacc_L2_english` (1,919 turns).
 * **Turn-end ground truth.** The HF release has one row per transcribed speaker
   segment in conversation order, without absolute times. A segment becomes an
   item only if it is not a backchannel, has at least 4 words, lasts 1.5 to 25 s, and
   the *next* segment is by the other speaker and is not a backchannel either
   (the floor really changed hands). Segments followed by a backchannel are
-  dropped as ambiguous. Inside a kept segment, the turn end is the last speech
+  dropped as ambiguous. Eligibility is decided in corpus order across shard files,
+  so a turn at the end of one shard is paired with the next segment in the next
+  shard. Inside a kept segment, the turn end is the last speech
   frame and intra-turn pauses are internal low-energy runs of at least 150 ms,
   found by an offline, non-causal energy detector (10 ms frames, threshold
   `max(p2 + 12 dB, p98 - 40 dB)`, gaps < 60 ms closed, bursts < 50 ms removed)
   that shares nothing with the systems under test. 0.5 s of the segment's own
   room tone is prepended and 4 s appended.
 * **Word timings for the oracle-text ablation.** The gold transcript is aligned
-  to faster-whisper `small.en` word timestamps on the full segment
+  to MLX Whisper `small.en` word timestamps on the full segment
   (`difflib` matching; unmatched words linearly interpolated).
 * **Split:** conversation-disjoint, hence speaker-disjoint. A deterministic search
-  balances item count and accent group: train 250 items / 21 speakers,
-  test 250 items / 18 speakers, each with 36% L1-English and 64% L2-English items.
+  balances item count and accent group: train 1,611 turns / 30 conversations /
+  60 speakers, test 1,609 turns / 31 conversations / 62 speakers, each with 40%
+  L1-English and 60% L2-English turns. Confidence intervals resample whole test
+  conversations.
 * **Caveats:** labels come from an energy detector, so turn ends can be off by
   tens of milliseconds and breaths or partner crosstalk can be counted as speech.
   The appended tail is synthetic continuation of room tone; in the real
@@ -82,7 +90,8 @@ For every test item an 8 kHz copy is made (`eotbench/audio.py:telephony`):
 4th-order 300-3400 Hz band-pass, resampling to 8 kHz, and 8-bit mu-law
 (G.711-style) companding. All systems receive it upsampled back to 16 kHz.
 Models are trained on 16 kHz audio only, so the 8 kHz results measure robustness
-to a channel mismatch.
+to a channel mismatch. The round-1 "instant features" ablation is evaluated at
+16 kHz only.
 
 ## 4. Models downloaded at run time
 
@@ -91,6 +100,7 @@ to a channel mismatch.
 | Silero VAD v6 (`silero-vad` pip package) | VAD for silence baselines and all candidate pauses | MIT |
 | `webrtcvad-wheels` (WebRTC VAD) | second silence baseline | BSD-style (WebRTC) / MIT (bindings) |
 | `pipecat-ai/smart-turn-v3`, file `smart-turn-v3.2-cpu.onnx` | semantic/audio turn baseline, run on CPU with onnxruntime | BSD-2-Clause |
-| faster-whisper `base.en` (int8, CPU) | prefix ASR for the proposed detector | MIT |
-| faster-whisper `small.en` | word-time alignment of EdAcc gold transcripts (data prep only) | MIT |
+| MLX Whisper `mlx-community/whisper-base.en-mlx` (Apple-silicon GPU, `mlx-whisper`) | streaming ASR for the real-time detector | MIT (code and converted OpenAI Whisper weights) |
+| MLX Whisper `mlx-community/whisper-small.en-mlx` | word-time alignment of EdAcc gold transcripts (data prep only) | MIT |
+| faster-whisper `base.en` (int8, CPU) | prefix ASR of the round-1 "instant features" ablation only | MIT |
 | `distilgpt2` | sentence-end probability feature | Apache-2.0 |

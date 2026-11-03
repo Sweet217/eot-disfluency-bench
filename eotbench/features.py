@@ -144,3 +144,90 @@ def asr_words(x: np.ndarray, model: str = "small.en") -> list[tuple[str, float]]
     segs, _ = whisper(model).transcribe(x, language="en", beam_size=5, word_timestamps=True,
                                         vad_filter=False)
     return [(w.word.strip(), float(w.end)) for s in segs for w in (s.words or [])]
+
+
+# ------------------------------------------------------- real-time (streaming) path
+FAST_PROSODY_FEATURES = ["f0_slope_st_s", "f0_last_rel_st", "f0_voiced_frac", "energy_slope_db_s",
+                         "energy_last_rel_db", "final_voiced_run_s", "final_lengthening", "turn_dur_s"]
+TIMING_FEATURES = ["n_prev_pauses", "mean_prev_pause_s", "max_prev_pause_s", "since_prev_pause_s"]
+
+
+def prosody_features_fast(x: np.ndarray, sr: int, t_pause: float, t_turn_start: float,
+                          window_s: float = 1.0) -> dict:
+    """Cheap prosody for real-time use: YIN F0 on the last `window_s` before the pause onset.
+
+    Same feature names as `prosody_features`, but voicing is decided from energy and
+    zero-crossing rate instead of pYIN's HMM, so it runs in ~2 ms instead of ~250 ms.
+    """
+    import librosa
+
+    out = dict.fromkeys(FAST_PROSODY_FEATURES, 0.0)
+    out["turn_dur_s"] = max(0.0, t_pause - t_turn_start)
+    seg = x[int(max(0.0, t_pause - window_s) * sr): int(t_pause * sr)]
+    hop, flen = int(0.01 * sr), int(0.064 * sr)
+    if len(seg) < flen + 10 * hop:
+        return out
+    f0 = librosa.yin(seg, fmin=60, fmax=400, sr=sr, frame_length=flen, hop_length=hop, center=False)
+    n = len(f0)
+    frames = np.lib.stride_tricks.sliding_window_view(seg, flen)[::hop][:n]
+    rms_db = 20 * np.log10(np.sqrt(np.mean(frames.astype(np.float64) ** 2, axis=1)) + 1e-10)
+    zcr = np.mean(np.abs(np.diff(np.signbit(frames), axis=1)), axis=1)
+    vflag = (rms_db > rms_db.max() - 25) & (zcr < 0.25) & (f0 > 62) & (f0 < 395)
+    voiced = np.where(vflag)[0]
+    if len(voiced) >= 5:
+        st = 12 * np.log2(f0[voiced] / np.median(f0[voiced]))
+        last = voiced[-1]
+        win = voiced >= last - 30
+        if win.sum() >= 4:
+            out["f0_slope_st_s"] = float(np.polyfit(voiced[win] * 0.01, st[win], 1)[0])
+        out["f0_last_rel_st"] = float(np.mean(st[-3:]))
+        out["f0_voiced_frac"] = float(np.mean(vflag[-30:]))
+        runs, s = [], voiced[0]
+        for a, b in zip(voiced[:-1], voiced[1:]):
+            if b != a + 1:
+                runs.append((a - s + 1) * 0.01)
+                s = b
+        runs.append((voiced[-1] - s + 1) * 0.01)
+        out["final_voiced_run_s"] = float(runs[-1])
+        out["final_lengthening"] = float(runs[-1] / (np.median(runs) + 1e-3))
+    db = audio.frame_db(seg, sr)
+    if len(db) >= 20:
+        out["energy_slope_db_s"] = float(np.polyfit(np.arange(20) * 0.01, db[-20:], 1)[0])
+        out["energy_last_rel_db"] = float(np.mean(db[-5:]) - np.percentile(db, 90))
+    return out
+
+
+def timing_features(prev_runs: list[tuple[int, int]], start: int, frame_s: float,
+                    min_frames: int = 5) -> dict:
+    """Pausing habit so far in this turn: earlier silences of >= min_frames before `start`."""
+    prev = [(s, n) for s, n in prev_runs if s < start and n >= min_frames]
+    lens = [n * frame_s for _, n in prev]
+    last_end = (prev[-1][0] + prev[-1][1]) if prev else None
+    return dict(n_prev_pauses=float(len(prev)),
+                mean_prev_pause_s=float(np.mean(lens)) if lens else 0.0,
+                max_prev_pause_s=float(max(lens)) if lens else 0.0,
+                since_prev_pause_s=float((start - last_end) * frame_s) if last_end is not None else -1.0)
+
+
+MLX_ASR_MODEL = "mlx-community/whisper-base.en-mlx"
+MLX_ALIGN_MODEL = "mlx-community/whisper-small.en-mlx"
+
+
+def mlx_transcribe(seg: np.ndarray, model: str = MLX_ASR_MODEL) -> str:
+    """Greedy, timestamp-free decode of a short window with MLX Whisper (Apple-silicon GPU)."""
+    import mlx_whisper
+
+    if len(seg) < 1600:
+        return ""
+    out = mlx_whisper.transcribe(seg.astype(np.float32), path_or_hf_repo=model, language="en",
+                                 temperature=0.0, condition_on_previous_text=False,
+                                 without_timestamps=True, verbose=None)
+    return out["text"].strip()
+
+
+def mlx_words(x: np.ndarray, model: str = MLX_ALIGN_MODEL) -> list[tuple[str, float]]:
+    import mlx_whisper
+
+    out = mlx_whisper.transcribe(x.astype(np.float32), path_or_hf_repo=model, language="en",
+                                 word_timestamps=True, temperature=0.0, verbose=None)
+    return [(w["word"].strip(), float(w["end"])) for s in out["segments"] for w in s.get("words", [])]

@@ -15,8 +15,9 @@ offline (non-causal, hindsight) energy detector that is independent of every
 system under test. Four seconds of the segment's own room tone are appended
 after the turn end so endpointers have time to fire.
 
-Only a few parquet *row groups* are fetched per shard (HTTP range requests),
-keeping the download modest.
+All 16 parquet shards are downloaded (6.95 GB). Every conversation is used, but at
+most CAP_PER_CONVERSATION eligible turns are kept per conversation (a seeded random
+sample), so long conversations do not dominate and compute stays practical.
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ import io
 import json
 import os
 import re
+import zlib
 
 import numpy as np
 import pyarrow.parquet as pq
@@ -51,26 +53,52 @@ def is_backchannel(text: str) -> bool:
     return len(w) <= 3 and all(x in BACKCHANNEL for x in w)
 
 
-def fetch_row_groups(raw_dir: str, row_groups: list[int]) -> list[str]:
-    """Download selected row groups of every shard into small local parquet files."""
-    from huggingface_hub import HfFileSystem
+def fetch_full(raw_dir: str) -> list[str]:
+    """Download every parquet shard (test + validation) of the HF release."""
+    from huggingface_hub import snapshot_download
 
-    fs = HfFileSystem()
-    os.makedirs(raw_dir, exist_ok=True)
+    snapshot_download(REPO, repo_type="dataset", allow_patterns=["data/*.parquet"], local_dir=raw_dir,
+                      max_workers=4)
+    return shard_files(raw_dir)
+
+
+def shard_files(raw_dir: str) -> list[str]:
+    d = os.path.join(raw_dir, "data")
+    return [os.path.join(d, f) for f in sorted(os.listdir(d)) if f.endswith(".parquet")]
+
+
+def conversation_of(speaker: str) -> str:
+    return speaker.rsplit("-", 1)[0]
+
+
+def eligible_turns(meta: list[dict]) -> list[int]:
+    """Indices of segments that end a turn: the next segment (in corpus order, across shard
+    boundaries) is by the other speaker of the same conversation and neither is a backchannel."""
     out = []
-    for f in sorted(fs.glob(f"datasets/{REPO}/data/*.parquet")):
-        base = os.path.basename(f).split("-of-")[0]
-        for rg in row_groups:
-            dst = os.path.join(raw_dir, f"{base}_rg{rg}.parquet")
-            if not os.path.exists(dst):
-                with fs.open(f) as fh:
-                    pf = pq.ParquetFile(fh)
-                    if rg >= pf.metadata.num_row_groups:
-                        continue
-                    pq.write_table(pf.read_row_group(rg), dst)
-                print(f"[edacc] fetched {dst}")
-            out.append(dst)
+    for i in range(len(meta) - 1):
+        r, nxt = meta[i], meta[i + 1]
+        conv = conversation_of(r["speaker"])
+        if conversation_of(nxt["speaker"]) != conv or nxt["speaker"] == r["speaker"]:
+            continue
+        if is_backchannel(r["text"]) or is_backchannel(nxt["text"]):
+            continue
+        if "<DTMF>" in r["text"] or len(norm_words(r["text"])) < 4:
+            continue
+        out.append(i)
     return out
+
+
+def ranked_by_conversation(meta: list[dict], idx: list[int], seed: int = 7) -> dict[int, int]:
+    """Seeded random rank of each eligible segment within its conversation (0 = first choice)."""
+    by = {}
+    for i in idx:
+        by.setdefault(conversation_of(meta[i]["speaker"]), []).append(i)
+    rank = {}
+    for conv, items in by.items():
+        rng = np.random.default_rng(zlib.crc32(f"{seed}:{conv}".encode()))
+        for r, j in enumerate(rng.permutation(items)):
+            rank[int(j)] = r
+    return rank
 
 
 def speech_mask(x: np.ndarray, sr: int) -> tuple[np.ndarray, float]:
@@ -131,62 +159,93 @@ def label_segment(x: np.ndarray, sr: int) -> dict | None:
     return dict(t_start=t_on, t_end=t_end, pauses=pauses, mask=mask)
 
 
-def build(raw_files: list[str], out_dir: str, min_dur=1.5, max_dur=25.0, seed=7) -> list[dict]:
+CAP_PER_CONVERSATION = 60
+META_COLS = ["speaker", "text", "accent", "raw_accent", "gender", "l1"]
+
+
+def make_item(r: dict, x: np.ndarray, sr: int, out_dir: str, min_dur=1.5, max_dur=25.0) -> dict | None:
+    """Turn one segment into a benchmark item (or None if it fails the duration/label filters)."""
+    if x.ndim > 1:
+        x = x.mean(1)
+    x = audio.resample(x, sr, audio.SR)
+    dur = len(x) / audio.SR
+    if not (min_dur <= dur <= max_dur):
+        return None
+    lab = label_segment(x, audio.SR)
+    if lab is None or lab["t_end"] - lab["t_start"] < 1.0:
+        return None
+    iid = f"edacc_{r['_path'].replace('.wav', '')}"
+    rng = np.random.default_rng(zlib.crc32(iid.encode()))
+    # keep the segment up to the labelled end, then 4 s of its own room tone
+    end_i = int(lab["t_end"] * audio.SR)
+    tone = room_tone(x, lab["mask"], audio.SR, LEAD_S + TAIL_S, rng)
+    lead = tone[: int(LEAD_S * audio.SR)]
+    tail = tone[int(LEAD_S * audio.SR):]
+    y = np.concatenate([lead, x[:end_i], tail]).astype(np.float32)
+    words = norm_words(r["text"])
+    rec = dict(id=iid, set="edacc", split=None, speaker=r["speaker"], conversation=conversation_of(r["speaker"]),
+               accent=r["accent"], l1=r["l1"], gender=r["gender"],
+               accent_group=accent_group(r["l1"], r["accent"]), text=" ".join(words),
+               has_filler=any(w in FILLER_TOKENS for w in words),
+               t_start=round(lab["t_start"] + LEAD_S, 3), t_end=round(lab["t_end"] + LEAD_S, 3),
+               pauses=[[round(p[0] + LEAD_S, 3), round(p[1] + LEAD_S, 3)] for p in lab["pauses"]],
+               duration=round(len(y) / audio.SR, 3))
+    p16 = os.path.join(out_dir, "wav16", iid + ".wav")
+    audio.write(p16, y, audio.SR)
+    rec["path"] = p16
+    return rec
+
+
+def build(shards: list[str], out_dir: str, cap: int = CAP_PER_CONVERSATION, seed: int = 7) -> list[dict]:
+    """Two passes: metadata (eligibility, per-conversation ranking), then audio for eligible rows.
+
+    Within each conversation the `cap` lowest-ranked eligible segments that pass the audio
+    filters are kept.
+    """
     import soundfile as sf
 
-    rng = np.random.default_rng(seed)
     os.makedirs(os.path.join(out_dir, "wav16"), exist_ok=True)
     os.makedirs(os.path.join(out_dir, "wav8"), exist_ok=True)
-    rows = []
-    for f in raw_files:
-        t = pq.read_table(f)
-        meta = t.drop(["audio"]).to_pylist()
-        aud = t.column("audio").to_pylist()
-        for m, a in zip(meta, aud):
-            m["_audio"] = a
-            m["_src"] = os.path.basename(f)
-        rows.append(meta)
+    meta, where = [], []
+    for split in ("test", "validation"):  # corpus order within each HF split
+        for f in [s for s in shards if os.path.basename(s).startswith(split)]:
+            rows = pq.read_table(f, columns=META_COLS).to_pylist()
+            meta += rows
+            where += [(f, k) for k in range(len(rows))]
+        # sentinel so the last segment of one split is never paired with the next split
+        meta.append({"speaker": "BOUNDARY-X", "text": ""})
+        where.append((None, None))
+    idx = eligible_turns(meta)
+    rank = ranked_by_conversation(meta, idx, seed)
+    by_file = {}
+    for i in idx:
+        f, k = where[i]
+        by_file.setdefault(f, []).append((k, i))
+    kept = []
+    for f, rows in sorted(by_file.items()):
+        t = pq.read_table(f, columns=["audio"])
+        col = t.column("audio")
+        for k, i in rows:
+            a = col[k].as_py()
+            x, sr = sf.read(io.BytesIO(a["bytes"]), dtype="float32")
+            r = dict(meta[i], _path=a["path"])
+            rec = make_item(r, x, sr, out_dir)
+            if rec is not None:
+                rec["_rank"] = rank[i]
+                kept.append(rec)
+        print(f"[edacc] {os.path.basename(f)}: {len(rows)} eligible turns processed")
     recs = []
-    for rs in rows:
-        for i in range(len(rs) - 1):
-            r, nxt = rs[i], rs[i + 1]
-            conv = r["speaker"].rsplit("-", 1)[0]
-            if nxt["speaker"].rsplit("-", 1)[0] != conv or nxt["speaker"] == r["speaker"]:
-                continue
-            if is_backchannel(r["text"]) or is_backchannel(nxt["text"]):
-                continue
-            if "<DTMF>" in r["text"] or len(norm_words(r["text"])) < 4:
-                continue
-            x, sr = sf.read(io.BytesIO(r["_audio"]["bytes"]), dtype="float32")
-            if x.ndim > 1:
-                x = x.mean(1)
-            x = audio.resample(x, sr, audio.SR)
-            dur = len(x) / audio.SR
-            if not (min_dur <= dur <= max_dur):
-                continue
-            lab = label_segment(x, audio.SR)
-            if lab is None or lab["t_end"] - lab["t_start"] < 1.0:
-                continue
-            # keep the segment up to the labelled end, then 4 s of its own room tone
-            end_i = int(lab["t_end"] * audio.SR)
-            tone = room_tone(x, lab["mask"], audio.SR, LEAD_S + TAIL_S, rng)
-            lead = tone[: int(LEAD_S * audio.SR)]
-            tail = tone[int(LEAD_S * audio.SR):]
-            y = np.concatenate([lead, x[:end_i], tail]).astype(np.float32)
-            iid = f"edacc_{r['_audio']['path'].replace('.wav', '')}"
-            words = norm_words(r["text"])
-            split = None  # assigned below, conversation-disjoint
-            rec = dict(id=iid, set="edacc", split=split, speaker=r["speaker"], conversation=conv,
-                       accent=r["accent"], l1=r["l1"], gender=r["gender"],
-                       accent_group=accent_group(r["l1"], r["accent"]), text=" ".join(words),
-                       has_filler=any(w in FILLER_TOKENS for w in words),
-                       t_start=round(lab["t_start"] + LEAD_S, 3), t_end=round(lab["t_end"] + LEAD_S, 3),
-                       pauses=[[round(p[0] + LEAD_S, 3), round(p[1] + LEAD_S, 3)] for p in lab["pauses"]],
-                       duration=round(len(y) / audio.SR, 3))
-            p16 = os.path.join(out_dir, "wav16", iid + ".wav")
-            audio.write(p16, y, audio.SR)
-            rec["path"] = p16
-            recs.append(rec)
+    by_conv = {}
+    for rec in kept:
+        by_conv.setdefault(rec["conversation"], []).append(rec)
+    for conv, rs in sorted(by_conv.items()):
+        rs.sort(key=lambda r: r["_rank"])
+        for j, rec in enumerate(rs):
+            if j < cap:
+                recs.append(rec)
+            else:
+                os.remove(rec["path"])
+            rec.pop("_rank", None)
     assign_split(recs)
     write_telephony(recs, out_dir)
     return recs
